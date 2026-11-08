@@ -1,239 +1,211 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VK Photo Tool Бумеранг</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin:0; background:#EBEDF0; color:#000; font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif; padding-bottom:40px; }
-    header { background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); position:sticky; top:0; z-index:50; }
-    .wrap { max-width:1000px; margin:0 auto; padding:0 16px; }
-    .hrow { height:56px; display:flex; justify-content:space-between; align-items:center; }
-    .brand { display:flex; align-items:center; gap:8px; font-weight:600; font-size:17px; }
-    .logo { width:32px; height:32px; background:#FF3347; border-radius:8px; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
-    .tabs { display:flex; background:#F0F2F5; border-radius:8px; padding:4px; gap:4px; }
-    .tab { border:0; background:transparent; padding:6px 14px; border-radius:6px; font-size:14px; color:#666; cursor:pointer; }
-    .tab.active { background:#fff; color:#0077FF; font-weight:500; box-shadow:0 1px 2px rgba(0,0,0,.12); }
-    main { margin-top:20px; }
-    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 1px 2px rgba(0,0,0,.06); margin-bottom:16px; }
-    .card h3 { margin:0 0 12px; font-size:15px; }
-    .muted { color:#818C99; font-size:13px; margin:4px 0 0; }
-    .grid { display:grid; grid-template-columns:1fr; gap:16px; }
-    @media (min-width:900px){ .grid { grid-template-columns:4fr 8fr; align-items:start; } }
-    .slots { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-    .slot { height:92px; border:2px dashed #C4C8CC; border-radius:12px; background:#F7F8FA; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; color:#777; font-size:12px; position:relative; overflow:hidden; text-align:center; }
-    .slot:hover { border-color:#0077FF; color:#0077FF; }
-    .slot.filled { border-style:solid; border-color:#D7DADD; }
-    .slot.active { border-color:#0077FF; box-shadow:0 0 0 3px rgba(0,119,255,.15); }
-    .slot img { width:100%; height:100%; object-fit:cover; }
-    .badge { position:absolute; top:6px; right:6px; background:#0077FF; color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
-    .dropzone { border:2px dashed #B3D4FF; border-radius:12px; background:rgba(0,119,255,.05); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; text-align:center; position:relative; overflow:hidden; }
-    .dropzone:hover { background:rgba(0,119,255,.1); }
-    .dropzone .dz-img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px; opacity:.35; }
-    .dropzone .dz-text { position:relative; z-index:2; padding: 20px; }
-    .row { display:flex; align-items:center; gap:10px; }
-    .zoomval { font-weight:600; color:#0077FF; min-width:48px; text-align:center; background:#F0F6FF; border-radius:8px; padding:4px; }
-    .hint { font-size:12px; color:#666; background:#F0F6FF; border:1px solid #DBE9FF; border-radius:10px; padding:10px; }
-    .btn { width:100%; padding:12px; background:#0077FF; color:#fff; border:0; border-radius:12px; font-size:15px; font-weight:500; cursor:pointer; }
-    .btn:disabled { opacity:.45; cursor:not-allowed; }
-    .btn:active:not(:disabled) { background:#0066DB; }
-    .btn-mini { border:0; background:#F0F2F5; color:#555; font-size:12px; padding:6px 10px; border-radius:8px; cursor:pointer; }
-    .warn { color:#E64646; font-size:11px; text-align:center; margin-top:8px; font-weight:500; }
-    .previewOuter { background:#fff; border-radius:16px; padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
-    .previewArea { background:#F0F2F5; border:1px solid #E7E8EC; border-radius:12px; padding:8px; min-height:400px; display:flex; align-items:center; justify-content:center;
-      background-image: linear-gradient(45deg,#E5E7EB 25%,transparent 25%),linear-gradient(-45deg,#E5E7EB 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#E5E7EB 75%),linear-gradient(-45deg,transparent 75%,#E5E7EB 75%);
-      background-size:20px 20px; background-position:0 0,0 10px,10px -10px,-10px 0; overflow:hidden;}
-    .disabledCard { opacity:.5; pointer-events:none; }
-    .slider { width:100%; accent-color:#0077FF; }
-    .headrow { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-    #errBox { position:fixed; left:0; right:0; bottom:0; background:#D64545; color:#fff; padding:10px 14px; font-size:13px; z-index:100; white-space:pre-wrap; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Бумеранг Фоторедактор</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#EBEDF0; color:#000; font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif; padding-bottom:40px; }
+  header { background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); position:sticky; top:0; z-index:50; }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 16px; }
+  .hrow { height:56px; display:flex; justify-content:space-between; align-items:center; }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:600; font-size:17px; }
+  .logo { width:32px; height:32px; background:#FF3347; border-radius:8px; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
+  .tabs { display:flex; background:#F0F2F5; border-radius:8px; padding:4px; gap:4px; }
+  .tab { border:0; background:transparent; padding:6px 14px; border-radius:6px; font-size:14px; color:#666; cursor:pointer; }
+  .tab.active { background:#fff; color:#0077FF; font-weight:500; box-shadow:0 1px 2px rgba(0,0,0,.12); }
+  main { margin-top:20px; }
+  .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 1px 2px rgba(0,0,0,.06); margin-bottom:16px; }
+  .card h3 { margin:0 0 12px; font-size:15px; }
+  .muted { color:#818C99; font-size:13px; margin:4px 0 0; }
+  .grid { display:grid; grid-template-columns:1fr; gap:16px; }
+  @media (min-width:900px){ .grid { grid-template-columns:4fr 8fr; align-items:start; } }
+  .slots { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .slot { height:92px; border:2px dashed #C4C8CC; border-radius:12px; background:#F7F8FA; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; color:#777; font-size:12px; position:relative; overflow:hidden; text-align:center; }
+  .slot:hover { border-color:#0077FF; color:#0077FF; }
+  .slot.filled { border-style:solid; border-color:#D7DADD; }
+  .slot.active { border-color:#0077FF; box-shadow:0 0 0 3px rgba(0,119,255,.15); }
+  .slot img { width:100%; height:100%; object-fit:cover; }
+  .badge { position:absolute; top:6px; right:6px; background:#0077FF; color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .dropzone { border:2px dashed #B3D4FF; border-radius:12px; background:rgba(0,119,255,.05); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; text-align:center; position:relative; overflow:hidden; min-height:180px;}
+  .dropzone:hover { background:rgba(0,119,255,.1); }
+  .dropzone .dz-img { position:relative; width:100%; height:auto; max-height:300px; object-fit:contain; }
+  .dropzone .dz-text { position:relative; z-index:2; padding:20px; }
+  .row { display:flex; align-items:center; gap:10px; }
+  .zoomval { font-weight:600; color:#0077FF; min-width:55px; text-align:center; background:#F0F6FF; border-radius:8px; padding:4px; font-size:13px; }
+  .hint { font-size:12px; color:#666; background:#F0F6FF; border:1px solid #DBE9FF; border-radius:10px; padding:10px; }
+  .btn { width:100%; padding:12px; background:#0077FF; color:#fff; border:0; border-radius:12px; font-size:15px; font-weight:500; cursor:pointer; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .btn:active:not(:disabled) { background:#0066DB; }
+  .btn-mini { border:0; background:#F0F2F5; color:#555; font-size:12px; padding:6px 10px; border-radius:8px; cursor:pointer; }
+  .warn { color:#E64646; font-size:11px; text-align:center; margin-top:8px; font-weight:500; }
+  .previewOuter { background:#fff; border-radius:16px; padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .previewArea { background:#F0F2F5; border:1px solid #E7E8EC; border-radius:12px; padding:8px; min-height:400px; display:flex; align-items:center; justify-content:center;
+    background-image: linear-gradient(45deg,#E5E7EB 25%,transparent 25%),linear-gradient(-45deg,#E5E7EB 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#E5E7EB 75%),linear-gradient(-45deg,transparent 75%,#E5E7EB 75%);
+    background-size:20px 20px; background-position:0 0,0 10px,10px -10px,-10px 0; overflow:hidden;}
+  #stage { position:relative; width:100%; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #stage img.photo { position:absolute; top:0; left:0; width:100%; transform-origin:top left; }
+  #stage img.template { position:relative; width:100%; display:block; pointer-events:none; z-index:999; }
+  .disabledCard { opacity:.5; pointer-events:none; }
+  .slider { width:100%; accent-color:#0077FF; }
+  .headrow { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  #errBox { position:fixed; left:0; right:0; bottom:0; background:#D64545; color:#fff; padding:10px 14px; font-size:13px; z-index:100; display:none; white-space:pre-wrap; }
   
-  <!-- Подключение React -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  /* Стили для галереи шаблонов */
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:16px; margin-top:16px; }
+  .gallery-item { border:2px solid #E7E8EC; border-radius:12px; padding:8px; cursor:pointer; text-align:center; background:#F0F2F5; transition:border 0.2s; }
+  .gallery-item:hover { border-color:#0077FF; }
+  .gallery-item img { width:100%; height:120px; object-fit:contain; margin-bottom:8px; }
   
-  <!-- Подключение Babel для понимания синтаксиса JSX -->
-  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <!-- Подключение VK Bridge -->
-  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+  /* Списки админа */
+  .admin-tpl-list { display:flex; flex-direction:column; gap:12px; }
+  .admin-tpl-row { display:flex; align-items:center; gap:12px; background:#F0F2F5; padding:12px; border-radius:12px; }
+</style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="errBox"></div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-    const bridge = window.vkBridge;
+<header>
+  <div class="wrap hrow">
+    <div class="brand"><span class="logo">Б</span> Бумеранг Фоторедактор</div>
+    <div class="tabs">
+      <button class="tab active" id="tabUser" onclick="switchTab('user')">Режим пользователя</button>
+      <button class="tab" id="tabAdmin" onclick="switchTab('admin')">Admin</button>
+    </div>
+  </div>
+</header>
 
-    function App() {
-      const [tab, setTab] = useState('user');
-      
-      const [adminTemplates, setAdminTemplates] = useState([]);
-      const [stagingSrc, setStagingSrc] = useState(null);
-      const [stagingCount, setStagingCount] = useState(1);
+<main>
+<div class="wrap">
 
-      const [userTemplate, setUserTemplate] = useState(null);
-      const [photos, setPhotos] = useState([]);
-      const [activeId, setActiveId] = useState(0);
-      const [error, setError] = useState('');
-      
-      const stageRef = useRef(null);
-      const dragRef = useRef(null);
+  <!-- ================= РЕЖИМ ПОЛЬЗОВАТЕЛЯ ================= -->
+  <section id="viewUser">
+    <!-- Выбор шаблона -->
+    <div class="card" id="userGalleryCard">
+      <h3>Выберите макет для работы</h3>
+      <div id="userGallery" class="gallery"></div>
+      <p class="muted" id="userGalleryEmpty" style="display:none">Администратор пока не добавил ни одного шаблона.</p>
+    </div>
 
-      useEffect(() => {
-        if (bridge) bridge.send('VKWebAppInit').catch(() => {});
-      }, []);
+    <!-- Редактор (скрыт до выбора шаблона) -->
+    <div class="grid" id="userEditorBox" style="display:none">
+      <div>
+        <div class="card">
+          <div class="headrow">
+            <h3 style="margin:0">1. Загрузите фото (<span id="cntLabel"></span>)</h3>
+            <button class="btn-mini" onclick="closeEditor()">Сменить макет</button>
+          </div>
+          <div class="slots" id="slotsGrid"></div>
+        </div>
 
-      const handleStagingUpload = (e) => {
-        const f = e.target.files && e.target.files[0];
-        if (!f) return;
-        const r = new FileReader();
-        r.onload = (ev) => setStagingSrc(ev.target.result);
-        r.readAsDataURL(f);
-      };
-
-      const saveTemplateToGallery = () => {
-        if (!stagingSrc) return;
-        setAdminTemplates(prev => [...prev, { id: Date.now(), src: stagingSrc, slots: stagingCount }]);
-        setStagingSrc(null);
-        setStagingCount(1);
-      };
-
-      const removeTemplate = (id) => {
-        setAdminTemplates(prev => prev.filter(t => t.id !== id));
-        if (userTemplate?.id === id) {
-          setUserTemplate(null);
-          setPhotos([]);
-        }
-      };
-
-      const selectUserTemplate = (tpl) => {
-        setUserTemplate(tpl);
-        setPhotos(Array.from({ length: tpl.slots }).map((_, i) => ({
-          id: i, src: null, scale: 1, rotation: 0, x: 0, y: 0, zIndex: i
-        })));
-        setActiveId(0);
-      };
-
-      const activePhoto = photos.find(p => p.id === activeId) || null;
-
-      const updateActive = (changes) => {
-        setPhotos(prev => prev.map(p => p.id === activeId ? { ...p, ...changes } : p));
-      };
-
-      const uploadPhoto = (e, id) => {
-        const f = e.target.files && e.target.files[0];
-        if (!f) return;
-        const r = new FileReader();
-        r.onload = (ev) => {
-          setPhotos(prev => prev.map(p => p.id === id ? { ...p, src: ev.target.result } : p));
-          setActiveId(id);
-        };
-        r.readAsDataURL(f);
-      };
-
-      const moveForward = () => {
-        setPhotos(prev => {
-          const curr = prev.find(p => p.id === activeId);
-          const next = prev.filter(p => p.zIndex > curr.zIndex).sort((a, b) => a.zIndex - b.zIndex)[0];
-          if (!next) return prev;
-          return prev.map(p => {
-            if (p.id === curr.id) return { ...p, zIndex: next.zIndex };
-            if (p.id === next.id) return { ...p, zIndex: curr.zIndex };
-            return p;
-          });
-        });
-      };
-
-      const moveBackward = () => {
-        setPhotos(prev => {
-          const curr = prev.find(p => p.id === activeId);
-          const prevEl = prev.filter(p => p.zIndex < curr.zIndex).sort((a, b) => b.zIndex - a.zIndex)[0];
-          if (!prevEl) return prev;
-          return prev.map(p => {
-            if (p.id === curr.id) return { ...p, zIndex: prevEl.zIndex };
-            if (p.id === prevEl.id) return { ...p, zIndex: curr.zIndex };
-            return p;
-          });
-        });
-      };
-
-      const handlePointerDown = (e) => {
-        if (!activePhoto || !activePhoto.src) return;
-        dragRef.current = { sx: e.clientX, sy: e.clientY, ox: activePhoto.x, oy: activePhoto.y };
-      };
-
-      useEffect(() => {
-        const handlePointerMove = (e) => {
-          if (!dragRef.current) return;
-          const dx = e.clientX - dragRef.current.sx;
-          const dy = e.clientY - dragRef.current.sy;
-          setPhotos(prev => prev.map(p => p.id === activeId ? { ...p, x: dragRef.current.ox + dx, y: dragRef.current.oy + dy } : p));
-        };
-        
-        const stopDrag = () => { dragRef.current = null; };
-
-        window.addEventListener('pointermove', handlePointerMove);
-        window.addEventListener('pointerup', stopDrag);
-        window.addEventListener('pointercancel', stopDrag);
-
-        return () => {
-          window.removeEventListener('pointermove', handlePointerMove);
-          window.removeEventListener('pointerup', stopDrag);
-          window.removeEventListener('pointercancel', stopDrag);
-        };
-      }, [activeId]);
-
-      const exportImage = async () => {
-        if (!userTemplate) return;
-        try {
-          const loadImg = (src) => new Promise((res, rej) => {
-            const im = new Image();
-            im.onload = () => res(im);
-            im.onerror = () => rej(new Error('Не удалось загрузить изображение'));
-            im.src = src;
-          });
-
-          const tplImg = await loadImg(userTemplate.src);
-          const canvas = document.createElement('canvas');
-          canvas.width = tplImg.naturalWidth; 
-          canvas.height = tplImg.naturalHeight;
-          const ctx = canvas.getContext('2d');
-          const stageWidth = stageRef.current.offsetWidth;
-          const mult = canvas.width / stageWidth;
-
-          const sortedPhotos = [...photos].sort((a, b) => a.zIndex - b.zIndex);
+        <div class="card" id="adjustCard">
+          <div class="headrow">
+            <h3 style="margin:0">2. Настройка фото <span id="adjNum"></span></h3>
+            <button class="btn-mini" onclick="resetActive()">Сброс</button>
+          </div>
           
-          for (let i = 0; i < sortedPhotos.length; i++) {
-            const p = sortedPhotos[i];
-            if (!p.src) continue;
-            const im = await loadImg(p.src);
-            
-            ctx.save();
-            ctx.translate(p.x * mult, p.y * mult);
-            ctx.scale(p.scale, p.scale);
-            ctx.rotate(p.rotation * Math.PI / 180);
-            
-            const baseW = canvas.width;
-            const baseH = baseW * (im.naturalHeight / im.naturalWidth);
-            
-            ctx.drawImage(im, 0, 0, baseW, baseH);
-            ctx.restore();
-          }
+          <div class="row" style="margin-bottom:8px"><span style="font-size:13px;width:60px">Масштаб</span><span class="zoomval" id="zoomVal">100%</span></div>
+          <input type="range" id="zoomSlider" class="slider" min="0.1" max="3" step="0.05" value="1">
           
-          ctx.drawImage(tplImg, 0, 0, canvas.width, canvas.height);
-          const dataUrl = canvas.toDataURL('image/png', 1.0);
+          <div class="row" style="margin-bottom:8px;margin-top:12px"><span style="font-size:13px;width:60px">Поворот</span><span class="zoomval" id="rotVal">0°</span></div>
+          <input type="range" id="rotSlider" class="slider" min="-180" max="180" step="1" value="0">
 
-          try {
-            if (bridge && bridge.isEmbedded && bridge.isEmbedded()) {
-              await bridge.send('VKWebAppDownloadFile', { url: dataUrl, filename: 'bumerang-photo.png' });
-              return;
-            }
-          } catch (e) {}
+          <div style="display:flex; gap:8px; margin-top:16px;">
+            <button class="btn-mini" style="flex:1" onclick="moveBackward()">↓ На задний план</button>
+            <button class="btn-mini" style="flex:1" onclick="moveForward()">↑ На передний план</button>
+          </div>
 
-          const a = document.createElement('a');
-          a.href = dataUrl;
-          a.download = 'bumerang-photo.png';
-          document.body.appendChild(a);
+          <div class="hint" style="margin-top:12px">Перетаскивайте пальцем или мышью внутри области предпросмотра, чтобы двигать фото.</div>
+        </div>
+
+        <div class="card">
+          <h3>3. Готово</h3>
+          <button class="btn" id="saveBtn" onclick="exportImage()">Сохранить макет</button>
+          <div class="warn" id="saveHint"></div>
+        </div>
+      </div>
+
+      <div class="previewOuter">
+        <div class="headrow">
+          <h3 style="margin:0">Предпросмотр</h3>
+          <span id="editingBadge" style="font-size:12px;color:#0077FF;background:#F0F6FF;padding:3px 8px;border-radius:8px;display:none"></span>
+        </div>
+        <div class="previewArea">
+          <div id="stage" style="cursor:grab"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= РЕЖИМ АДМИНИСТРАТОРА ================= -->
+  <section id="viewAdmin" style="display:none">
+    <div class="card" style="max-width:600px;margin:0 auto">
+      <h3 style="font-size:18px">Добавление нового шаблона</h3>
+      <p class="muted" style="margin-bottom:20px">Загрузите PNG макет и укажите, сколько фото потребуется пользователю.</p>
+
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Количество фото (от 1 до 10)</label>
+      <div class="row" style="margin-bottom:24px">
+        <input type="range" id="stagingCount" class="slider" min="1" max="10" step="1" value="1">
+        <span class="zoomval" id="stagingCountVal">1</span>
+      </div>
+
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Файл шаблона (PNG с прозрачностью)</label>
+      <label class="dropzone" id="tplDrop">
+        <img class="dz-img" id="stagingImg" style="display:none">
+        <div class="dz-text" id="stagingText">
+          <div style="font-size:26px">⬆</div>
+          <div style="font-size:14px;font-weight:500;color:#333">Нажмите, чтобы загрузить файл</div>
+        </div>
+        <input type="file" accept="image/png" hidden id="stagingInput">
+      </label>
+      <button class="btn" id="saveTplBtn" style="margin-top:16px;display:none" onclick="saveTemplateToGallery()">Сохранить в галерею шаблонов</button>
+    </div>
+
+    <div class="card" id="adminTplListCard" style="max-width:600px;margin:16px auto;display:none">
+      <h3 style="font-size:16px;margin-bottom:12px">Загруженные шаблоны</h3>
+      <div class="admin-tpl-list" id="adminTplList"></div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js" onerror="window.__bridgeFailed=1"></script>
+<script>
+function showErr(t){ var b=document.getElementById('errBox'); b.style.display='block'; b.textContent=t; setTimeout(function(){b.style.display='none';}, 5000); }
+window.addEventListener('error', function(e){ showErr('Ошибка: ' + e.message); });
+
+// Состояние
+var tab = 'user';
+var adminTemplates = []; // {id, src, slots}
+var stagingSrc = null;
+var stagingSlots = 1;
+
+var userTemplate = null;
+var photos = []; // {id, src, scale, rotation, x, y, zIndex}
+var activeId = 0;
+var drag = null;
+var photoEls = {}; // DOM элементы фото на Canvas
+
+// Базовые функции UI
+function switchTab(t){
+  tab = t;
+  document.getElementById('viewUser').style.display = t==='user'?'block':'none';
+  document.getElementById('viewAdmin').style.display = t==='admin'?'block':'none';
+  document.getElementById('tabUser').className = 'tab'+(t==='user'?' active':'');
+  document.getElementById('tabAdmin').className = 'tab'+(t==='admin'?' active':'');
+}
+
+function active(){ 
+  for(var i=0; i<photos.length; i++) if(photos[i].id === activeId) return photos[i]; 
+  return photos[0]; 
+}
+
+// ---------------- АДМИН ПАНЕЛЬ ----------------
+document.getElementById('stagingCount').addEventListener('input', function(e){
+  stagingSlots = parseInt(e.target.value, 10);
+  document.getElementById('stagingCountVal').textContent = stagingSlots;
+});
+
+document.getElementById('stagingInput').addEventListener('change', function(e){
