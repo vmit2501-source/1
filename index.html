@@ -10,7 +10,7 @@
   header { background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); position:sticky; top:0; z-index:50; }
   .wrap { max-width:1000px; margin:0 auto; padding:0 16px; }
   .hrow { height:56px; display:flex; justify-content:space-between; align-items:center; }
-  .brand { display:flex; align-items:center; gap:8px; font-weight:600; font-size:17px; }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:600; font-size:17px; cursor:pointer; user-select:none; }
   .logo { width:32px; height:32px; background:#FF3347; border-radius:8px; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
   .tabs { display:flex; background:#F0F2F5; border-radius:8px; padding:4px; gap:4px; }
   .tab { border:0; background:transparent; padding:6px 14px; border-radius:6px; font-size:14px; color:#666; cursor:pointer; }
@@ -68,33 +68,30 @@
 
 <header>
   <div class="wrap hrow">
-    <div class="brand"><span class="logo">Б</span> Бумеранг Фоторедактор</div>
+    <div class="brand" id="logoArea"><span class="logo">Б</span> Бумеранг Фоторедактор</div>
     <div class="tabs">
-      <button class="tab active" id="tabUser" onclick="switchTab('user')">Режим пользователя</button>
-      <button class="tab" id="tabAdmin" onclick="switchTab('admin')">Admin</button>
+      <button class="tab active" id="tabUser">Режим пользователя</button>
+      <button class="tab" id="tabAdmin" style="display:none">Admin</button> <!-- СКРЫТА ПО УМОЛЧАНИЮ -->
     </div>
   </div>
 </header>
 
 <main>
 <div class="wrap">
-
   <!-- ================= РЕЖИМ ПОЛЬЗОВАТЕЛЯ ================= -->
   <section id="viewUser">
-    <!-- Выбор шаблона -->
     <div class="card" id="userGalleryCard">
       <h3>Выберите макет для работы</h3>
       <div id="userGallery" class="gallery"></div>
-      <p class="muted" id="userGalleryEmpty" style="display:none">Администратор пока не добавил ни одного шаблона.</p>
+      <p class="muted" id="userGalleryEmpty" style="display:none">Макеты пока не загружены.</p>
     </div>
 
-    <!-- Редактор (скрыт до выбора шаблона) -->
     <div class="grid" id="userEditorBox" style="display:none">
       <div>
         <div class="card">
           <div class="headrow">
             <h3 style="margin:0">1. Загрузите фото (<span id="cntLabel"></span>)</h3>
-            <button class="btn-mini" onclick="closeEditor()">Сменить макет</button>
+            <button class="btn-mini" id="btnChangeTpl">Сменить макет</button>
           </div>
           <div class="slots" id="slotsGrid"></div>
         </div>
@@ -102,7 +99,7 @@
         <div class="card" id="adjustCard">
           <div class="headrow">
             <h3 style="margin:0">2. Настройка фото <span id="adjNum"></span></h3>
-            <button class="btn-mini" onclick="resetActive()">Сброс</button>
+            <button class="btn-mini" id="btnResetActive">Сброс</button>
           </div>
           
           <div class="row" style="margin-bottom:8px"><span style="font-size:13px;width:60px">Масштаб</span><span class="zoomval" id="zoomVal">100%</span></div>
@@ -112,8 +109,8 @@
           <input type="range" id="rotSlider" class="slider" min="-180" max="180" step="1" value="0">
 
           <div style="display:flex; gap:8px; margin-top:16px;">
-            <button class="btn-mini" style="flex:1" onclick="moveBackward()">↓ На задний план</button>
-            <button class="btn-mini" style="flex:1" onclick="moveForward()">↑ На передний план</button>
+            <button class="btn-mini" style="flex:1" id="btnMoveBack">↓ На задний план</button>
+            <button class="btn-mini" style="flex:1" id="btnMoveForward">↑ На передний план</button>
           </div>
 
           <div class="hint" style="margin-top:12px">Перетаскивайте пальцем или мышью внутри области предпросмотра, чтобы двигать фото.</div>
@@ -121,7 +118,7 @@
 
         <div class="card">
           <h3>3. Готово</h3>
-          <button class="btn" id="saveBtn" onclick="exportImage()">Сохранить макет</button>
+          <button class="btn" id="saveBtn">Сохранить макет</button>
           <div class="warn" id="saveHint"></div>
         </div>
       </div>
@@ -138,12 +135,12 @@
     </div>
   </section>
 
-  <!-- ================= РЕЖИМ АДМИНИСТРАТОРА ================= -->
+  <!-- ================= РЕЖИМ АДМИНА ================= -->
   <section id="viewAdmin" style="display:none">
     <div class="card" style="max-width:600px;margin:0 auto">
       <h3 style="font-size:18px">Добавление нового шаблона</h3>
       <p class="muted" style="margin-bottom:20px">Загрузите PNG макет и укажите, сколько фото потребуется пользователю.</p>
-
+      
       <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Количество фото (от 1 до 10)</label>
       <div class="row" style="margin-bottom:24px">
         <input type="range" id="stagingCount" class="slider" min="1" max="10" step="1" value="1">
@@ -159,7 +156,7 @@
         </div>
         <input type="file" accept="image/png" hidden id="stagingInput">
       </label>
-      <button class="btn" id="saveTplBtn" style="margin-top:16px;display:none" onclick="saveTemplateToGallery()">Сохранить в галерею шаблонов</button>
+      <button class="btn" id="saveTplBtn" style="margin-top:16px;display:none">Сохранить в галерею шаблонов</button>
     </div>
 
     <div class="card" id="adminTplListCard" style="max-width:600px;margin:16px auto;display:none">
@@ -176,30 +173,43 @@
 function showErr(t){ var b=document.getElementById('errBox'); b.style.display='block'; b.textContent=t; setTimeout(function(){b.style.display='none';}, 5000); }
 window.addEventListener('error', function(e){ showErr('Ошибка: ' + e.message); });
 
-// Состояние
+// ================== БАЗА ДАННЫХ ШАБЛОНОВ ==================
+// ВСТАВЛЯЙТЕ ССЫЛКИ НА ВАШИ ПОСТОЯННЫЕ ШАБЛОНЫ СЮДА, ЧТОБЫ ИХ ВИДЕЛИ ВСЕ ПОЛЬЗОВАТЕЛИ
+var adminTemplates = [
+  // Пример: { id: 1, src: 'https://vash-sayt.ru/shablon_knigi.png', slots: 3 }
+]; 
+// ==========================================================
+
 var tab = 'user';
-var adminTemplates = []; // {id, src, slots}
 var stagingSrc = null;
 var stagingSlots = 1;
-
 var userTemplate = null;
-var photos = []; // {id, src, scale, rotation, x, y, zIndex}
+var photos = []; 
 var activeId = 0;
 var drag = null;
-var photoEls = {}; // DOM элементы фото на Canvas
+var photoEls = {}; 
 
-// Базовые функции UI
+// Секретный доступ админа (5 кликов по логотипу)
+var clickCount = 0;
+document.getElementById('logoArea').addEventListener('click', function() {
+  clickCount++;
+  if(clickCount === 5) {
+    document.getElementById('tabAdmin').style.display = 'block';
+    showErr('Режим администратора разблокирован!');
+  }
+  setTimeout(function(){ clickCount = 0; }, 2000); // сброс счетчика через 2 сек
+});
+
+// Слушатели переключения вкладок
+document.getElementById('tabUser').addEventListener('click', function(){ switchTab('user'); });
+document.getElementById('tabAdmin').addEventListener('click', function(){ switchTab('admin'); });
+
 function switchTab(t){
   tab = t;
   document.getElementById('viewUser').style.display = t==='user'?'block':'none';
   document.getElementById('viewAdmin').style.display = t==='admin'?'block':'none';
   document.getElementById('tabUser').className = 'tab'+(t==='user'?' active':'');
   document.getElementById('tabAdmin').className = 'tab'+(t==='admin'?' active':'');
-}
-
-function active(){ 
-  for(var i=0; i<photos.length; i++) if(photos[i].id === activeId) return photos[i]; 
-  return photos[0]; 
 }
 
 // ---------------- АДМИН ПАНЕЛЬ ----------------
@@ -209,3 +219,180 @@ document.getElementById('stagingCount').addEventListener('input', function(e){
 });
 
 document.getElementById('stagingInput').addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(ev){ 
+    stagingSrc = ev.target.result;
+    document.getElementById('stagingImg').src = stagingSrc;
+    document.getElementById('stagingImg').style.display = 'block';
+    document.getElementById('stagingText').style.display = 'none';
+    document.getElementById('saveTplBtn').style.display = 'block';
+  };
+  r.readAsDataURL(f);
+});
+
+document.getElementById('saveTplBtn').addEventListener('click', function(){
+  if(!stagingSrc) return;
+  adminTemplates.push({ id: Date.now(), src: stagingSrc, slots: stagingSlots });
+  
+  stagingSrc = null;
+  stagingSlots = 1;
+  document.getElementById('stagingCount').value = 1;
+  document.getElementById('stagingCountVal').textContent = '1';
+  document.getElementById('stagingImg').style.display = 'none';
+  document.getElementById('stagingImg').src = '';
+  document.getElementById('stagingText').style.display = 'block';
+  document.getElementById('saveTplBtn').style.display = 'none';
+  document.getElementById('stagingInput').value = '';
+
+  renderAdminGallery();
+  renderUserGallery();
+});
+
+// Глобальная функция для удаления (создается динамически)
+window.deleteTemplate = function(id) {
+  adminTemplates = adminTemplates.filter(function(t){ return t.id !== id; });
+  if(userTemplate && userTemplate.id === id) closeEditor();
+  renderAdminGallery();
+  renderUserGallery();
+};
+
+function renderAdminGallery(){
+  var list = document.getElementById('adminTplList');
+  var card = document.getElementById('adminTplListCard');
+  if(adminTemplates.length === 0){ card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  list.innerHTML = '';
+  adminTemplates.forEach(function(tpl, i){
+    list.innerHTML += `
+      <div class="admin-tpl-row">
+        <img src="${tpl.src}" style="width:60px;height:60px;object-fit:contain;background:#fff;border-radius:8px">
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:500">Шаблон #${i+1}</div>
+          <div style="font-size:12px;color:#666">Слотов для фото: ${tpl.slots}</div>
+        </div>
+        <button class="btn-mini" style="color:#E64646;background:rgba(230,70,70,0.1)" onclick="deleteTemplate(${tpl.id})">Удалить</button>
+      </div>`;
+  });
+}
+
+// ---------------- ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ ----------------
+function renderUserGallery(){
+  var gal = document.getElementById('userGallery');
+  var empty = document.getElementById('userGalleryEmpty');
+  gal.innerHTML = '';
+  if(adminTemplates.length === 0){
+    gal.style.display = 'none'; empty.style.display = 'block';
+  } else {
+    gal.style.display = 'grid'; empty.style.display = 'none';
+    adminTemplates.forEach(function(tpl){
+      var div = document.createElement('div');
+      div.className = 'gallery-item';
+      div.innerHTML = `
+        <img src="${tpl.src}">
+        <div style="font-size:13px;font-weight:500;color:#333">Фотографий: ${tpl.slots}</div>
+        <button class="btn-mini" style="width:100%;margin-top:8px;background:#0077FF;color:#fff">Выбрать</button>
+      `;
+      div.addEventListener('click', function(){ openEditor(tpl); });
+      gal.appendChild(div);
+    });
+  }
+}
+
+function openEditor(tpl){
+  userTemplate = tpl;
+  photos = [];
+  for(var i=0; i<tpl.slots; i++){
+    photos.push({id: i, src: null, scale: 1, rotation: 0, x: 0, y: 0, zIndex: i});
+  }
+  activeId = 0;
+  document.getElementById('userGalleryCard').style.display = 'none';
+  document.getElementById('userEditorBox').style.display = 'block';
+  renderSlots(); renderPreview(); updateAdjust(); updateSaveState();
+}
+
+function closeEditor(){
+  userTemplate = null; photos = [];
+  document.getElementById('userEditorBox').style.display = 'none';
+  document.getElementById('userGalleryCard').style.display = 'block';
+}
+document.getElementById('btnChangeTpl').addEventListener('click', closeEditor);
+
+function active(){ 
+  for(var i=0; i<photos.length; i++) if(photos[i].id === activeId) return photos[i]; 
+  return photos[0]; 
+}
+
+function setActive(id){ activeId = id; renderSlots(); renderPreview(); updateAdjust(); }
+function applyT(p){ 
+  var img = photoEls[p.id]; 
+  if(img) img.style.transform = `translate(${p.x}px, ${p.y}px) scale(${p.scale}) rotate(${p.rotation}deg)`; 
+}
+
+document.getElementById('btnResetActive').addEventListener('click', function(){
+  var p = active(); if(!p) return; 
+  p.scale = 1; p.rotation = 0; p.x = 0; p.y = 0; 
+  applyT(p); updateAdjust(); 
+});
+
+function uploadPhoto(e, id){
+  var f = e.target.files && e.target.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(ev){
+    for(var i=0; i<photos.length; i++) { if(photos[i].id === id){ photos[i].src = ev.target.result; } }
+    setActive(id); updateSaveState();
+  };
+  r.readAsDataURL(f);
+}
+
+document.getElementById('btnMoveForward').addEventListener('click', function(){
+  var curr = active();
+  var nexts = photos.filter(function(p){ return p.zIndex > curr.zIndex; }).sort(function(a,b){ return a.zIndex - b.zIndex; });
+  if(nexts.length > 0){
+    var next = nexts[0];
+    var tmp = curr.zIndex; curr.zIndex = next.zIndex; next.zIndex = tmp;
+    renderPreview();
+  }
+});
+
+document.getElementById('btnMoveBack').addEventListener('click', function(){
+  var curr = active();
+  var prevs = photos.filter(function(p){ return p.zIndex < curr.zIndex; }).sort(function(a,b){ return b.zIndex - a.zIndex; });
+  if(prevs.length > 0){
+    var prev = prevs[0];
+    var tmp = curr.zIndex; curr.zIndex = prev.zIndex; prev.zIndex = tmp;
+    renderPreview();
+  }
+});
+
+function renderSlots(){
+  var g = document.getElementById('slotsGrid'); g.innerHTML='';
+  photos.forEach(function(p, idx){
+    var label = document.createElement('label');
+    label.className = 'slot' + (p.src ? ' filled' : '') + ((p.src && p.id === activeId) ? ' active' : '');
+    if(p.src){
+      var im = document.createElement('img'); im.src = p.src; label.appendChild(im);
+      if(p.id === activeId){ var b = document.createElement('span'); b.className = 'badge'; b.textContent = 'Выбрано'; label.appendChild(b); }
+      label.addEventListener('click', function(ev){ ev.preventDefault(); setActive(p.id); });
+    } else {
+      label.innerHTML = '<div style="font-size:18px">⬆</div><div>Слот '+(idx+1)+'</div>';
+      var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.hidden = true;
+      inp.addEventListener('change', function(ev){ uploadPhoto(ev, p.id); });
+      label.appendChild(inp);
+    }
+    g.appendChild(label);
+  });
+  document.getElementById('cntLabel').textContent = photos.filter(function(p){return p.src;}).length + ' из ' + photos.length;
+}
+
+function renderPreview(){
+  var st = document.getElementById('stage'); st.innerHTML = '';
+  if(!userTemplate) return;
+
+  var tpl = document.createElement('img'); 
+  tpl.className = 'template'; 
+  tpl.src = userTemplate.src; 
+  st.appendChild(tpl);
+
+  photoEls = {};
+  var sorted = photos.slice().sort(function(a,b){ return a.zIndex - b.zIndex; });
