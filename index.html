@@ -1,376 +1,239 @@
-import React, { useState, useEffect, useRef } from 'react';
-import bridge from '@vkontakte/vk-bridge';
-import './App.css'; // Убедитесь, что стили из предыдущего index.html сохранены здесь
-
-export default function App() {
-  const [tab, setTab] = useState('user');
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VK Photo Tool Бумеранг</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background:#EBEDF0; color:#000; font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif; padding-bottom:40px; }
+    header { background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); position:sticky; top:0; z-index:50; }
+    .wrap { max-width:1000px; margin:0 auto; padding:0 16px; }
+    .hrow { height:56px; display:flex; justify-content:space-between; align-items:center; }
+    .brand { display:flex; align-items:center; gap:8px; font-weight:600; font-size:17px; }
+    .logo { width:32px; height:32px; background:#FF3347; border-radius:8px; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
+    .tabs { display:flex; background:#F0F2F5; border-radius:8px; padding:4px; gap:4px; }
+    .tab { border:0; background:transparent; padding:6px 14px; border-radius:6px; font-size:14px; color:#666; cursor:pointer; }
+    .tab.active { background:#fff; color:#0077FF; font-weight:500; box-shadow:0 1px 2px rgba(0,0,0,.12); }
+    main { margin-top:20px; }
+    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 1px 2px rgba(0,0,0,.06); margin-bottom:16px; }
+    .card h3 { margin:0 0 12px; font-size:15px; }
+    .muted { color:#818C99; font-size:13px; margin:4px 0 0; }
+    .grid { display:grid; grid-template-columns:1fr; gap:16px; }
+    @media (min-width:900px){ .grid { grid-template-columns:4fr 8fr; align-items:start; } }
+    .slots { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .slot { height:92px; border:2px dashed #C4C8CC; border-radius:12px; background:#F7F8FA; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; color:#777; font-size:12px; position:relative; overflow:hidden; text-align:center; }
+    .slot:hover { border-color:#0077FF; color:#0077FF; }
+    .slot.filled { border-style:solid; border-color:#D7DADD; }
+    .slot.active { border-color:#0077FF; box-shadow:0 0 0 3px rgba(0,119,255,.15); }
+    .slot img { width:100%; height:100%; object-fit:cover; }
+    .badge { position:absolute; top:6px; right:6px; background:#0077FF; color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+    .dropzone { border:2px dashed #B3D4FF; border-radius:12px; background:rgba(0,119,255,.05); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; text-align:center; position:relative; overflow:hidden; }
+    .dropzone:hover { background:rgba(0,119,255,.1); }
+    .dropzone .dz-img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px; opacity:.35; }
+    .dropzone .dz-text { position:relative; z-index:2; padding: 20px; }
+    .row { display:flex; align-items:center; gap:10px; }
+    .zoomval { font-weight:600; color:#0077FF; min-width:48px; text-align:center; background:#F0F6FF; border-radius:8px; padding:4px; }
+    .hint { font-size:12px; color:#666; background:#F0F6FF; border:1px solid #DBE9FF; border-radius:10px; padding:10px; }
+    .btn { width:100%; padding:12px; background:#0077FF; color:#fff; border:0; border-radius:12px; font-size:15px; font-weight:500; cursor:pointer; }
+    .btn:disabled { opacity:.45; cursor:not-allowed; }
+    .btn:active:not(:disabled) { background:#0066DB; }
+    .btn-mini { border:0; background:#F0F2F5; color:#555; font-size:12px; padding:6px 10px; border-radius:8px; cursor:pointer; }
+    .warn { color:#E64646; font-size:11px; text-align:center; margin-top:8px; font-weight:500; }
+    .previewOuter { background:#fff; border-radius:16px; padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+    .previewArea { background:#F0F2F5; border:1px solid #E7E8EC; border-radius:12px; padding:8px; min-height:400px; display:flex; align-items:center; justify-content:center;
+      background-image: linear-gradient(45deg,#E5E7EB 25%,transparent 25%),linear-gradient(-45deg,#E5E7EB 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#E5E7EB 75%),linear-gradient(-45deg,transparent 75%,#E5E7EB 75%);
+      background-size:20px 20px; background-position:0 0,0 10px,10px -10px,-10px 0; overflow:hidden;}
+    .disabledCard { opacity:.5; pointer-events:none; }
+    .slider { width:100%; accent-color:#0077FF; }
+    .headrow { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    #errBox { position:fixed; left:0; right:0; bottom:0; background:#D64545; color:#fff; padding:10px 14px; font-size:13px; z-index:100; white-space:pre-wrap; }
+  </style>
   
-  // Состояние администратора
-  const [adminTemplates, setAdminTemplates] = useState([]); // [{ id, src, slots }]
-  const [stagingSrc, setStagingSrc] = useState(null);
-  const [stagingCount, setStagingCount] = useState(1);
-
-  // Состояние пользователя
-  const [userTemplate, setUserTemplate] = useState(null);
-  const [photos, setPhotos] = useState([]);
-  const [activeId, setActiveId] = useState(0);
-  const [error, setError] = useState('');
+  <!-- Подключение React -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   
-  const stageRef = useRef(null);
-  const dragRef = useRef(null);
+  <!-- Подключение Babel для понимания синтаксиса JSX -->
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Подключение VK Bridge -->
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
 
-  useEffect(() => {
-    bridge.send('VKWebAppInit').catch(() => {});
-  }, []);
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const bridge = window.vkBridge;
 
-  // --- ЛОГИКА АДМИНИСТРАТОРА ---
-  const handleStagingUpload = (e) => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = (ev) => setStagingSrc(ev.target.result);
-    r.readAsDataURL(f);
-  };
-
-  const saveTemplateToGallery = () => {
-    if (!stagingSrc) return;
-    setAdminTemplates(prev => [...prev, {
-      id: Date.now(),
-      src: stagingSrc,
-      slots: stagingCount
-    }]);
-    setStagingSrc(null);
-    setStagingCount(1);
-  };
-
-  const removeTemplate = (id) => {
-    setAdminTemplates(prev => prev.filter(t => t.id !== id));
-    if (userTemplate?.id === id) {
-      setUserTemplate(null);
-      setPhotos([]);
-    }
-  };
-
-  // --- ЛОГИКА ПОЛЬЗОВАТЕЛЯ ---
-  const selectUserTemplate = (tpl) => {
-    setUserTemplate(tpl);
-    setPhotos(Array.from({ length: tpl.slots }).map((_, i) => ({
-      id: i, src: null, scale: 1, rotation: 0, x: 0, y: 0, zIndex: i
-    })));
-    setActiveId(0);
-  };
-
-  const activePhoto = photos.find(p => p.id === activeId) || null;
-
-  const updateActive = (changes) => {
-    setPhotos(prev => prev.map(p => p.id === activeId ? { ...p, ...changes } : p));
-  };
-
-  const uploadPhoto = (e, id) => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = (ev) => {
-      setPhotos(prev => prev.map(p => p.id === id ? { ...p, src: ev.target.result } : p));
-      setActiveId(id);
-    };
-    r.readAsDataURL(f);
-  };
-
-  // --- УПРАВЛЕНИЕ СЛОЯМИ (Z-INDEX) ---
-  const moveForward = () => {
-    setPhotos(prev => {
-      const curr = prev.find(p => p.id === activeId);
-      const next = prev.filter(p => p.zIndex > curr.zIndex).sort((a, b) => a.zIndex - b.zIndex)[0];
-      if (!next) return prev;
-      return prev.map(p => {
-        if (p.id === curr.id) return { ...p, zIndex: next.zIndex };
-        if (p.id === next.id) return { ...p, zIndex: curr.zIndex };
-        return p;
-      });
-    });
-  };
-
-  const moveBackward = () => {
-    setPhotos(prev => {
-      const curr = prev.find(p => p.id === activeId);
-      const prevEl = prev.filter(p => p.zIndex < curr.zIndex).sort((a, b) => b.zIndex - a.zIndex)[0];
-      if (!prevEl) return prev;
-      return prev.map(p => {
-        if (p.id === curr.id) return { ...p, zIndex: prevEl.zIndex };
-        if (p.id === prevEl.id) return { ...p, zIndex: curr.zIndex };
-        return p;
-      });
-    });
-  };
-
-  // --- ПЕРЕТАСКИВАНИЕ ---
-  const handlePointerDown = (e) => {
-    if (!activePhoto || !activePhoto.src) return;
-    dragRef.current = { sx: e.clientX, sy: e.clientY, ox: activePhoto.x, oy: activePhoto.y };
-  };
-
-  useEffect(() => {
-    const handlePointerMove = (e) => {
-      if (!dragRef.current) return;
-      const dx = e.clientX - dragRef.current.sx;
-      const dy = e.clientY - dragRef.current.sy;
-      setPhotos(prev => prev.map(p => p.id === activeId ? { ...p, x: dragRef.current.ox + dx, y: dragRef.current.oy + dy } : p));
-    };
-    
-    const stopDrag = () => { dragRef.current = null; };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', stopDrag);
-    window.addEventListener('pointercancel', stopDrag);
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', stopDrag);
-      window.removeEventListener('pointercancel', stopDrag);
-    };
-  }, [activeId]);
-
-  // --- ЭКСПОРТ CANVAS С УЧЕТОМ Z-INDEX И ВРАЩЕНИЯ ---
-  const exportImage = async () => {
-    if (!userTemplate) return;
-    try {
-      const loadImg = (src) => new Promise((res, rej) => {
-        const im = new Image();
-        im.onload = () => res(im);
-        im.onerror = () => rej(new Error('Не удалось загрузить изображение'));
-        im.src = src;
-      });
-
-      const tplImg = await loadImg(userTemplate.src);
-      const canvas = document.createElement('canvas');
-      canvas.width = tplImg.naturalWidth; 
-      canvas.height = tplImg.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      const stageWidth = stageRef.current.offsetWidth;
-      const mult = canvas.width / stageWidth;
-
-      // Отрисовка фото в порядке возрастания z-index
-      const sortedPhotos = [...photos].sort((a, b) => a.zIndex - b.zIndex);
+    function App() {
+      const [tab, setTab] = useState('user');
       
-      for (let i = 0; i < sortedPhotos.length; i++) {
-        const p = sortedPhotos[i];
-        if (!p.src) continue;
-        const im = await loadImg(p.src);
-        
-        ctx.save();
-        // Смещение точки трансформации (соответствует CSS transform-origin: top left)
-        ctx.translate(p.x * mult, p.y * mult);
-        ctx.scale(p.scale, p.scale);
-        ctx.rotate(p.rotation * Math.PI / 180);
-        
-        const baseW = canvas.width;
-        const baseH = baseW * (im.naturalHeight / im.naturalWidth);
-        
-        ctx.drawImage(im, 0, 0, baseW, baseH);
-        ctx.restore();
-      }
-      
-      ctx.drawImage(tplImg, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      const [adminTemplates, setAdminTemplates] = useState([]);
+      const [stagingSrc, setStagingSrc] = useState(null);
+      const [stagingCount, setStagingCount] = useState(1);
 
-      try {
-        if (bridge.isEmbedded()) {
-          await bridge.send('VKWebAppDownloadFile', { url: dataUrl, filename: 'bumerang-photo.png' });
-          return;
+      const [userTemplate, setUserTemplate] = useState(null);
+      const [photos, setPhotos] = useState([]);
+      const [activeId, setActiveId] = useState(0);
+      const [error, setError] = useState('');
+      
+      const stageRef = useRef(null);
+      const dragRef = useRef(null);
+
+      useEffect(() => {
+        if (bridge) bridge.send('VKWebAppInit').catch(() => {});
+      }, []);
+
+      const handleStagingUpload = (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = (ev) => setStagingSrc(ev.target.result);
+        r.readAsDataURL(f);
+      };
+
+      const saveTemplateToGallery = () => {
+        if (!stagingSrc) return;
+        setAdminTemplates(prev => [...prev, { id: Date.now(), src: stagingSrc, slots: stagingCount }]);
+        setStagingSrc(null);
+        setStagingCount(1);
+      };
+
+      const removeTemplate = (id) => {
+        setAdminTemplates(prev => prev.filter(t => t.id !== id));
+        if (userTemplate?.id === id) {
+          setUserTemplate(null);
+          setPhotos([]);
         }
-      } catch (e) {}
+      };
 
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = 'bumerang-photo.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      const selectUserTemplate = (tpl) => {
+        setUserTemplate(tpl);
+        setPhotos(Array.from({ length: tpl.slots }).map((_, i) => ({
+          id: i, src: null, scale: 1, rotation: 0, x: 0, y: 0, zIndex: i
+        })));
+        setActiveId(0);
+      };
 
-    } catch (err) {
-      setError('Ошибка при сохранении: ' + err.message);
-    }
-  };
+      const activePhoto = photos.find(p => p.id === activeId) || null;
 
-  const allUploaded = photos.length > 0 && photos.every(p => p.src !== null);
-  const canSave = userTemplate && allUploaded;
+      const updateActive = (changes) => {
+        setPhotos(prev => prev.map(p => p.id === activeId ? { ...p, ...changes } : p));
+      };
 
-  return (
-    <>
-      {error && <div id="errBox" style={{display: 'block'}}>{error}</div>}
-      
-      <header>
-        <div className="wrap hrow">
-          <div className="brand"><span className="logo" style={{background: '#FF3347'}}>Б</span> Бумеранг Фоторедактор</div>
-          <div className="tabs">
-            <button className={`tab ${tab === 'user' ? 'active' : ''}`} onClick={() => setTab('user')}>Режим пользователя</button>
-            <button className={`tab ${tab === 'admin' ? 'active' : ''}`} onClick={() => setTab('admin')}>Admin</button>
-          </div>
-        </div>
-      </header>
+      const uploadPhoto = (e, id) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = (ev) => {
+          setPhotos(prev => prev.map(p => p.id === id ? { ...p, src: ev.target.result } : p));
+          setActiveId(id);
+        };
+        r.readAsDataURL(f);
+      };
 
-      <main>
-        <div className="wrap">
-          {tab === 'user' && (
-            <section id="viewUser">
-              {!userTemplate ? (
-                <div className="card">
-                  <h3>Выберите макет для работы</h3>
-                  {adminTemplates.length === 0 ? (
-                    <p className="muted">Администратор пока не добавил ни одного шаблона.</p>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px', marginTop: '16px' }}>
-                      {adminTemplates.map(tpl => (
-                        <div key={tpl.id} onClick={() => selectUserTemplate(tpl)} style={{ border: '2px solid #E7E8EC', borderRadius: '12px', padding: '8px', cursor: 'pointer', textAlign: 'center', background: '#F0F2F5' }}>
-                          <img src={tpl.src} alt="" style={{ width: '100%', height: '120px', objectFit: 'contain', marginBottom: '8px' }} />
-                          <div style={{ fontSize: '13px', fontWeight: 500, color: '#333' }}>Фотографий: {tpl.slots}</div>
-                          <button className="btn-mini" style={{ width: '100%', marginTop: '8px', background: '#0077FF', color: '#fff' }}>Выбрать</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="grid">
-                  <div>
-                    <div className="card">
-                      <div className="headrow">
-                        <h3 style={{margin: 0}}>1. Загрузите фото (<span>{photos.filter(p => p.src).length} из {userTemplate.slots}</span>)</h3>
-                        <button className="btn-mini" onClick={() => setUserTemplate(null)}>К выбору шаблона</button>
-                      </div>
-                      <div className="slots" id="slotsGrid">
-                        {photos.map((p, idx) => (
-                          <label key={p.id} className={`slot ${p.src ? 'filled' : ''} ${p.id === activeId && p.src ? 'active' : ''}`} onClick={(e) => { if (p.src) { e.preventDefault(); setActiveId(p.id); } }}>
-                            {p.src ? (
-                              <>
-                                <img src={p.src} alt="" />
-                                {p.id === activeId && <span className="badge">Выбрано</span>}
-                              </>
-                            ) : (
-                              <div>
-                                <div style={{fontSize: '18px'}}>⬆</div>
-                                <div>Слот {idx + 1}</div>
-                                <input type="file" accept="image/*" hidden onChange={(e) => uploadPhoto(e, p.id)} />
-                              </div>
-                            )}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+      const moveForward = () => {
+        setPhotos(prev => {
+          const curr = prev.find(p => p.id === activeId);
+          const next = prev.filter(p => p.zIndex > curr.zIndex).sort((a, b) => a.zIndex - b.zIndex)[0];
+          if (!next) return prev;
+          return prev.map(p => {
+            if (p.id === curr.id) return { ...p, zIndex: next.zIndex };
+            if (p.id === next.id) return { ...p, zIndex: curr.zIndex };
+            return p;
+          });
+        });
+      };
 
-                    <div className={`card ${!activePhoto || !activePhoto.src ? 'disabledCard' : ''}`} id="adjustCard">
-                      <div className="headrow">
-                        <h3 style={{margin: 0}}>2. Настройка фото <span>{activePhoto?.src ? activeId + 1 : ''}</span></h3>
-                        <button className="btn-mini" onClick={() => updateActive({scale: 1, rotation: 0, x: 0, y: 0})}>Сброс</button>
-                      </div>
-                      
-                      {/* Управление масштабом */}
-                      <div className="row" style={{marginBottom: '8px'}}>
-                        <span style={{fontSize: '13px', width: '60px'}}>Масштаб</span>
-                        <span className="zoomval">{activePhoto ? Math.round(activePhoto.scale * 100) : 100}%</span>
-                      </div>
-                      <input type="range" className="slider" min="0.1" max="3" step="0.05" value={activePhoto?.scale || 1} onChange={(e) => updateActive({scale: parseFloat(e.target.value)})} />
-                      
-                      {/* Управление поворотом */}
-                      <div className="row" style={{marginBottom: '8px', marginTop: '12px'}}>
-                        <span style={{fontSize: '13px', width: '60px'}}>Поворот</span>
-                        <span className="zoomval">{activePhoto?.rotation || 0}°</span>
-                      </div>
-                      <input type="range" className="slider" min="-180" max="180" step="1" value={activePhoto?.rotation || 0} onChange={(e) => updateActive({rotation: parseInt(e.target.value, 10)})} />
+      const moveBackward = () => {
+        setPhotos(prev => {
+          const curr = prev.find(p => p.id === activeId);
+          const prevEl = prev.filter(p => p.zIndex < curr.zIndex).sort((a, b) => b.zIndex - a.zIndex)[0];
+          if (!prevEl) return prev;
+          return prev.map(p => {
+            if (p.id === curr.id) return { ...p, zIndex: prevEl.zIndex };
+            if (p.id === prevEl.id) return { ...p, zIndex: curr.zIndex };
+            return p;
+          });
+        });
+      };
 
-                      {/* Управление слоями */}
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                        <button className="btn-mini" onClick={moveBackward} style={{ flex: 1 }}>↓ На задний план</button>
-                        <button className="btn-mini" onClick={moveForward} style={{ flex: 1 }}>↑ На передний план</button>
-                      </div>
+      const handlePointerDown = (e) => {
+        if (!activePhoto || !activePhoto.src) return;
+        dragRef.current = { sx: e.clientX, sy: e.clientY, ox: activePhoto.x, oy: activePhoto.y };
+      };
 
-                      <div className="hint" style={{marginTop: '12px'}}>Перетаскивайте пальцем или мышью внутри области предпросмотра, чтобы двигать выбранное фото.</div>
-                    </div>
+      useEffect(() => {
+        const handlePointerMove = (e) => {
+          if (!dragRef.current) return;
+          const dx = e.clientX - dragRef.current.sx;
+          const dy = e.clientY - dragRef.current.sy;
+          setPhotos(prev => prev.map(p => p.id === activeId ? { ...p, x: dragRef.current.ox + dx, y: dragRef.current.oy + dy } : p));
+        };
+        
+        const stopDrag = () => { dragRef.current = null; };
 
-                    <div className="card">
-                      <h3>3. Готово</h3>
-                      <button className="btn" disabled={!canSave} onClick={exportImage}>Сохранить макет</button>
-                      <div className="warn">{canSave ? '' : `Загрузите все ${userTemplate.slots} фото.`}</div>
-                    </div>
-                  </div>
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', stopDrag);
+        window.addEventListener('pointercancel', stopDrag);
 
-                  <div className="previewOuter">
-                    <div className="headrow">
-                      <h3 style={{margin: 0}}>Предпросмотр</h3>
-                      {activePhoto && activePhoto.src && <span style={{fontSize: '12px', color: '#0077FF', background: '#F0F6FF', padding: '3px 8px', borderRadius: '8px'}}>Редактируется фото {activeId + 1}</span>}
-                    </div>
-                    <div className="previewArea">
-                      <div id="stage" ref={stageRef} onPointerDown={handlePointerDown} style={{ display: 'block', cursor: 'grab', position: 'relative', width: '100%', userSelect: 'none', overflow: 'hidden' }}>
-                        <img className="template" src={userTemplate.src} alt="" style={{ position: 'relative', width: '100%', display: 'block', pointerEvents: 'none', zIndex: 999 }} draggable={false} />
-                        
-                        {/* Отрисовка фото в DOM с учетом z-index и вращения */}
-                        {photos.map(p => p.src && (
-                          <img key={p.id} className="photo" src={p.src} alt="" draggable={false} style={{
-                            position: 'absolute', top: 0, left: 0, width: '100%', transformOrigin: 'top left', zIndex: p.zIndex,
-                            transform: `translate(${p.x}px, ${p.y}px) scale(${p.scale}) rotate(${p.rotation}deg)`
-                          }} />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </section>
-          )}
+        return () => {
+          window.removeEventListener('pointermove', handlePointerMove);
+          window.removeEventListener('pointerup', stopDrag);
+          window.removeEventListener('pointercancel', stopDrag);
+        };
+      }, [activeId]);
 
-          {tab === 'admin' && (
-            <section id="viewAdmin">
-              <div className="card" style={{maxWidth: '600px', margin: '0 auto'}}>
-                <h3 style={{fontSize: '18px'}}>Добавление нового шаблона</h3>
-                <p className="muted" style={{marginBottom: '20px'}}>Загрузите PNG макет и укажите, сколько фотографий потребуется загрузить пользователю.</p>
+      const exportImage = async () => {
+        if (!userTemplate) return;
+        try {
+          const loadImg = (src) => new Promise((res, rej) => {
+            const im = new Image();
+            im.onload = () => res(im);
+            im.onerror = () => rej(new Error('Не удалось загрузить изображение'));
+            im.src = src;
+          });
 
-                <label style={{fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '8px'}}>Количество фото (от 1 до 10)</label>
-                <div className="row" style={{marginBottom: '24px'}}>
-                  <input type="range" className="slider" min="1" max="10" step="1" value={stagingCount} onChange={(e) => setStagingCount(parseInt(e.target.value, 10))} />
-                  <span className="zoomval">{stagingCount}</span>
-                </div>
+          const tplImg = await loadImg(userTemplate.src);
+          const canvas = document.createElement('canvas');
+          canvas.width = tplImg.naturalWidth; 
+          canvas.height = tplImg.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          const stageWidth = stageRef.current.offsetWidth;
+          const mult = canvas.width / stageWidth;
 
-                <label style={{fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '8px'}}>Файл шаблона (PNG с прозрачностью)</label>
-                <label className="dropzone" style={{ height: stagingSrc ? 'auto' : '180px', minHeight: '180px' }}>
-                  {stagingSrc ? (
-                    <img className="dz-img" src={stagingSrc} alt="" style={{ position: 'relative', width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'contain', opacity: 1, padding: 0 }} />
-                  ) : (
-                    <div className="dz-text">
-                      <div style={{fontSize: '26px'}}>⬆</div>
-                      <div style={{fontSize: '14px', fontWeight: 500, color: '#333'}}>Нажмите, чтобы загрузить файл</div>
-                    </div>
-                  )}
-                  <input type="file" accept="image/png" hidden onChange={handleStagingUpload} />
-                </label>
+          const sortedPhotos = [...photos].sort((a, b) => a.zIndex - b.zIndex);
+          
+          for (let i = 0; i < sortedPhotos.length; i++) {
+            const p = sortedPhotos[i];
+            if (!p.src) continue;
+            const im = await loadImg(p.src);
+            
+            ctx.save();
+            ctx.translate(p.x * mult, p.y * mult);
+            ctx.scale(p.scale, p.scale);
+            ctx.rotate(p.rotation * Math.PI / 180);
+            
+            const baseW = canvas.width;
+            const baseH = baseW * (im.naturalHeight / im.naturalWidth);
+            
+            ctx.drawImage(im, 0, 0, baseW, baseH);
+            ctx.restore();
+          }
+          
+          ctx.drawImage(tplImg, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/png', 1.0);
 
-                {stagingSrc && (
-                  <button className="btn" style={{marginTop: '16px'}} onClick={saveTemplateToGallery}>Сохранить в галерею шаблонов</button>
-                )}
-              </div>
+          try {
+            if (bridge && bridge.isEmbedded && bridge.isEmbedded()) {
+              await bridge.send('VKWebAppDownloadFile', { url: dataUrl, filename: 'bumerang-photo.png' });
+              return;
+            }
+          } catch (e) {}
 
-              {/* Список добавленных шаблонов */}
-              {adminTemplates.length > 0 && (
-                <div className="card" style={{maxWidth: '600px', margin: '16px auto'}}>
-                  <h3 style={{fontSize: '16px', marginBottom: '12px'}}>Загруженные шаблоны ({adminTemplates.length})</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {adminTemplates.map((tpl, i) => (
-                      <div key={tpl.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#F0F2F5', padding: '12px', borderRadius: '12px' }}>
-                        <img src={tpl.src} alt="" style={{ width: '60px', height: '60px', objectFit: 'contain', background: '#fff', borderRadius: '8px' }} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '14px', fontWeight: 500 }}>Шаблон #{i + 1}</div>
-                          <div style={{ fontSize: '12px', color: '#666' }}>Слотов для фото: {tpl.slots}</div>
-                        </div>
-                        <button className="btn-mini" style={{ color: '#E64646', background: 'rgba(230, 70, 70, 0.1)' }} onClick={() => removeTemplate(tpl.id)}>Удалить</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </section>
-          )}
-        </div>
-      </main>
-    </>
-  );
-}
+          const a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = 'bumerang-photo.png';
+          document.body.appendChild(a);
